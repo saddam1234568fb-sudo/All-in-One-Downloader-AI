@@ -13,15 +13,13 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler, 
     MessageHandler, filters, ContextTypes
 )
-from telegram.error import BadRequest
 
-# 🌐 সার্ভার সজাগ রাখার জন্য
+# 🌐 সার্ভার ২৪ ঘণ্টা সজাগ রাখার জন্য
 from keep_alive import keep_alive
 
 # --- কনফিগারেশন ---
-BOT_TOKEN = "8978899309:AAGySai08hJM-SFfgZHA7ddkxFbOV_NDobw"
-MAIN_CHANNEL_LINK = "https://t.me/+HbL1VKdIbaQ5ZjI1"  
-MAIN_CHANNEL_ID = "--1004313671513" 
+BOT_TOKEN = "8690240616:AAFzk942XkVODDA9EYtY1eDaIrs5B9XjNX4"
+SUPPORT_CHANNEL_LINK = "https://t.me/+GOw-gR6YlixiOTE9"  # আপনার সাপোর্ট বা প্রমোশন চ্যানেলের লিংক
 
 ADMIN_USERNAME = "saddamadmin"
 ADMIN_PASSWORD = "saddamadmin1234"
@@ -29,13 +27,53 @@ ADMIN_PASSWORD = "saddamadmin1234"
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 DB_NAME = "bot_database.db"
 
+# --- ২ ভাষার ডিকশনারি (English & Bengali) ---
+TEXTS = {
+    'bn': {
+        'welcome': "🎉 <b>হ্যালো {name}!</b> 👋\n\n🔥 <b>All-in-One Downloader & AI Bot</b>-এ আপনাকে স্বাগতম!\n\n💡 <b>কীভাবে ব্যবহার করবেন?</b>\n🔗 <b>ভিডিও ডাউনলোড:</b> Facebook, YouTube, TikTok বা Instagram-এর যেকোনো ভিডিও লিংক এখানে পেস্ট করুন।\n🤖 <b>AI চ্যাট:</b> আপনি চাইলে আমার সাথে যেকোনো বিষয়ে গল্প বা প্রশ্ন করতে পারেন (ChatGPT এর মতো)!\n\n👇 <i>যেকোনো একটি লিংক দিয়ে এখনই ট্রাই করে দেখুন!</i>",
+        'btn_how': "📥 কীভাবে ডাউনলোড করবো?", 
+        'btn_id': "🆔 আমার প্রোফাইল",
+        'btn_lang': "🌐 ভাষা (Language)", 
+        'btn_support': "🎧 সাপোর্ট চ্যানেল",
+        'ai_typing': "🤖 <b>AI টাইপ করছে...</b>",
+        'dl_processing': "⏳ <b>আপনার ভিডিওটি প্রসেস করা হচ্ছে... দয়া করে অপেক্ষা করুন!</b>",
+        'dl_uploading': "🚀 <b>ডাউনলোড সম্পন্ন! এখন আপনার ইনবক্সে আপলোড করা হচ্ছে...</b>",
+        'dl_large': "❌ <b>ভিডিওটি অনেক বড় (50MB+)!</b> টেলিগ্রামের লিমিটের কারণে পাঠানো সম্ভব হচ্ছে না।",
+        'dl_failed': "❌ <b>ডাউনলোড ব্যর্থ হয়েছে!</b> লিংকটি প্রাইভেট হতে পারে অথবা সার্ভারে সমস্যা হচ্ছে।",
+        'dl_caption': "📥 <b>ডাউনলোড করেছে:</b> @{bot_uname}",
+        'lang_msg': "✅ <b>ভাষা সফলভাবে বাংলায় পরিবর্তন করা হয়েছে!</b>"
+    },
+    'en': {
+        'welcome': "🎉 <b>Hello {name}!</b> 👋\n\n🔥 Welcome to the <b>All-in-One Downloader & AI Bot</b>!\n\n💡 <b>How to use?</b>\n🔗 <b>Video Download:</b> Paste any video link from Facebook, YouTube, TikTok, or Instagram here.\n🤖 <b>AI Chat:</b> You can chat or ask me anything (Just like ChatGPT)!\n\n👇 <i>Try sending a link right now!</i>",
+        'btn_how': "📥 How to Download?", 
+        'btn_id': "🆔 My Profile",
+        'btn_lang': "🌐 Language", 
+        'btn_support': "🎧 Support Channel",
+        'ai_typing': "🤖 <b>AI is thinking...</b>",
+        'dl_processing': "⏳ <b>Processing your video... Please wait!</b>",
+        'dl_uploading': "🚀 <b>Download complete! Uploading to your inbox...</b>",
+        'dl_large': "❌ <b>Video is too large (50MB+)!</b> Cannot send due to Telegram limits.",
+        'dl_failed': "❌ <b>Download failed!</b> The link might be private or server issue.",
+        'dl_caption': "📥 <b>Downloaded by:</b> @{bot_uname}",
+        'lang_msg': "✅ <b>Language successfully changed to English!</b>"
+    }
+}
+
+def get_t(user_id, key):
+    with sqlite3.connect(DB_NAME) as conn:
+        row = conn.execute("SELECT lang FROM bot_users WHERE user_id = ?", (user_id,)).fetchone()
+        lang = row[0] if row and row[0] in TEXTS else 'bn' # Default Bangla
+    return TEXTS.get(lang, TEXTS['en']).get(key, TEXTS['en'].get(key, ""))
+
 # --- ডাটাবেজ সেটআপ ---
 def init_db():
     with sqlite3.connect(DB_NAME) as conn:
-        conn.execute("CREATE TABLE IF NOT EXISTS bot_users (user_id INTEGER PRIMARY KEY, first_name TEXT, joined_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
+        conn.execute("CREATE TABLE IF NOT EXISTS bot_users (user_id INTEGER PRIMARY KEY, first_name TEXT, joined_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, lang TEXT DEFAULT 'bn')")
         conn.execute("CREATE TABLE IF NOT EXISTS stats (key TEXT PRIMARY KEY, value INTEGER DEFAULT 0)")
         conn.execute("INSERT OR IGNORE INTO stats (key, value) VALUES ('total_downloads', 0)")
         conn.execute("INSERT OR IGNORE INTO stats (key, value) VALUES ('total_ai_chats', 0)")
+        try: conn.execute("ALTER TABLE bot_users ADD COLUMN lang TEXT DEFAULT 'bn'")
+        except: pass
         conn.commit()
 init_db()
 
@@ -53,11 +91,11 @@ def update_stat(key):
 def get_ai_response(text):
     try:
         encoded_text = urllib.parse.quote(text)
-        url = f"https://api.popcat.xyz/chatbot?msg={encoded_text}&owner=Saddam&botname=SmartAI"
+        url = f"https://api.popcat.xyz/chatbot?msg={encoded_text}&owner=Admin&botname=SmartAI"
         r = requests.get(url).json()
-        return r.get('response', "দুঃখিত, সার্ভার এখন ব্যস্ত আছে। একটু পর আবার চেষ্টা করুন।")
+        return r.get('response', "I am currently busy. Please try again later.")
     except:
-        return "🤖 আমার AI ব্রেইন এখন একটু ঘুমাচ্ছে। কিছুক্ষণ পর মেসেজ দিন!"
+        return "🤖 My AI brain is currently sleeping. Please message later!"
 
 # --- ভিডিও ডাউনলোডার ফাংশন ---
 def download_video(url, user_id):
@@ -75,40 +113,21 @@ def download_video(url, user_id):
     except Exception as e:
         return None
 
-# --- স্টার্ট ও ফোর্স সাবস্ক্রাইব ---
+# --- স্টার্ট কমান্ড (Direct Access) ---
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     save_user(user.id, user.first_name)
     context.user_data['state'] = None
-
-    try:
-        member = await context.bot.get_chat_member(MAIN_CHANNEL_ID, user.id)
-        if member.status in ['left', 'kicked']: raise BadRequest("Not joined")
-        await show_main_menu(update, context) 
-    except Exception as e:
-        txt = "🛑 <b>অ্যাক্সেস ডিনাইড!</b>\n\nআমাদের বটের <b>VIP Downloader ও AI</b> ফিচারগুলো ব্যবহার করতে হলে প্রথমে আপনাকে আমাদের <b>মেইন চ্যানেলে</b> জয়েন করতে হবে।\n\n১. <b>'🤖 I am not a robot'</b> বাটনে ক্লিক করে জয়েন করুন।\n২. তারপর ফিরে এসে <b>'✅ Verify'</b> বাটনে ক্লিক করুন।"
-        kb = [
-            [InlineKeyboardButton("🤖 I am not a robot", url=MAIN_CHANNEL_LINK)],
-            [InlineKeyboardButton("✅ Verify", callback_data="verify_sub")]
-        ]
-        if update.message: await update.message.reply_text(txt, reply_markup=InlineKeyboardMarkup(kb), parse_mode=ParseMode.HTML)
-        else: await update.callback_query.edit_message_text(txt, reply_markup=InlineKeyboardMarkup(kb), parse_mode=ParseMode.HTML)
+    await show_main_menu(update, context)
 
 async def show_main_menu(obj, context: ContextTypes.DEFAULT_TYPE):
     is_query = hasattr(obj, 'data') 
     user = obj.from_user
-    txt = (
-        f"🎉 <b>ভেরিফিকেশন সফল!</b>\n\n"
-        f"✨ <b>হ্যালো {user.first_name}!</b> 👋\n"
-        f"🔥 <b>All-in-One Downloader & AI Bot</b>-এ আপনাকে স্বাগতম!\n\n"
-        f"💡 <b>কীভাবে ব্যবহার করবেন?</b>\n"
-        f"🔗 <b>ভিডিও ডাউনলোড:</b> যেকোনো Facebook, YouTube, TikTok বা Instagram ভিডিওর লিংক কপি করে এখানে পেস্ট করুন।\n"
-        f"🤖 <b>AI চ্যাট:</b> আপনি চাইলে আমার সাথে যেকোনো বিষয়ে গল্প করতে পারেন বা প্রশ্ন জিজ্ঞেস করতে পারেন!\n\n"
-        f"👇 <i>যেকোনো একটি লিংক দিয়ে ট্রাই করে দেখুন!</i>"
-    )
+    txt = get_t(user.id, 'welcome').format(name=user.first_name)
+    
     kb = [
-        [InlineKeyboardButton("📥 How to Download?", callback_data="how_to"), InlineKeyboardButton("🆔 My ID", callback_data="my_id")],
-        [InlineKeyboardButton("🎧 Support Channel", url=MAIN_CHANNEL_LINK)]
+        [InlineKeyboardButton(get_t(user.id, 'btn_how'), callback_data="how_to"), InlineKeyboardButton(get_t(user.id, 'btn_id'), callback_data="my_id")],
+        [InlineKeyboardButton(get_t(user.id, 'btn_lang'), callback_data="change_lang"), InlineKeyboardButton(get_t(user_id, 'btn_support'), url=SUPPORT_CHANNEL_LINK)]
     ]
     markup = InlineKeyboardMarkup(kb)
     
@@ -121,8 +140,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     state = context.user_data.get('state')
     is_admin = context.user_data.get('is_admin')
+    bot_uname = context.bot.username
 
-    # Admin Login
+    # Admin Login Logic
     if state == 'WAITING_ADMIN_USER':
         if text == ADMIN_USERNAME:
             context.user_data['state'] = 'WAITING_ADMIN_PASS'
@@ -139,7 +159,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ ভুল পাসওয়ার্ড!")
         return
 
-    # Admin Broadcast
+    # Admin Broadcast Logic
     if state == 'WAITING_BC_MSG' and is_admin:
         with sqlite3.connect(DB_NAME) as conn: users = [u[0] for u in conn.execute("SELECT user_id FROM bot_users").fetchall()]
         msg = await update.message.reply_text(f"⏳ {len(users)} জনের কাছে পাঠানো হচ্ছে...")
@@ -153,14 +173,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_admin_panel(update.message, context)
         return
 
-    # User Checks Force Sub before processing message
-    try:
-        member = await context.bot.get_chat_member(MAIN_CHANNEL_ID, user.id)
-        if member.status in ['left', 'kicked']: raise BadRequest("Not joined")
-    except:
-        await start_command(update, context)
-        return
-
     # --- লিংক নাকি চ্যাট ডিটেক্ট করা ---
     url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
     urls = url_pattern.findall(text)
@@ -168,7 +180,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if urls:
         # Link Detected -> Download Video
         url = urls[0]
-        processing_msg = await update.message.reply_text("⏳ <b>ভিডিওটি প্রসেস করা হচ্ছে... দয়া করে অপেক্ষা করুন!</b>", parse_mode=ParseMode.HTML)
+        processing_msg = await update.message.reply_text(get_t(user.id, 'dl_processing'), parse_mode=ParseMode.HTML)
         await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.RECORD_VIDEO)
         
         # Download in background
@@ -176,22 +188,23 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         file_path = await loop.run_in_executor(None, download_video, url, user.id)
 
         if file_path and os.path.exists(file_path):
-            file_size = os.path.getsize(file_path) / (1024 * 1024) # MB
+            file_size = os.path.getsize(file_path) / (1024 * 1024) # Size in MB
             if file_size > 49:
-                await processing_msg.edit_text("❌ <b>ভিডিওটি অনেক বড় (50MB+)!</b> টেলিগ্রামের লিমিটের কারণে পাঠানো সম্ভব হচ্ছে না।", parse_mode=ParseMode.HTML)
+                await processing_msg.edit_text(get_t(user.id, 'dl_large'), parse_mode=ParseMode.HTML)
             else:
-                await processing_msg.edit_text("🚀 <b>ভিডিও ডাউনলোড সম্পন্ন! এখন আপলোড করা হচ্ছে...</b>", parse_mode=ParseMode.HTML)
+                await processing_msg.edit_text(get_t(user.id, 'dl_uploading'), parse_mode=ParseMode.HTML)
                 await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_VIDEO)
                 try:
+                    cap = get_t(user.id, 'dl_caption').format(bot_uname=bot_uname)
                     with open(file_path, 'rb') as video:
-                        await update.message.reply_video(video, caption="📥 <b>Downloaded by:</b> @SmartAccept_AutoBot", parse_mode=ParseMode.HTML)
+                        await update.message.reply_video(video, caption=cap, parse_mode=ParseMode.HTML)
                     update_stat('total_downloads')
                     await processing_msg.delete()
                 except Exception as e:
-                    await processing_msg.edit_text("❌ <b>আপলোড করতে সমস্যা হয়েছে!</b>", parse_mode=ParseMode.HTML)
-            os.remove(file_path) # Clean up
+                    await processing_msg.edit_text(get_t(user.id, 'dl_failed'), parse_mode=ParseMode.HTML)
+            os.remove(file_path) # File cleanup
         else:
-            await processing_msg.edit_text("❌ <b>ভিডিওটি ডাউনলোড করা সম্ভব হয়নি!</b> লিংকটি প্রাইভেট হতে পারে অথবা সার্ভারে সমস্যা হচ্ছে।", parse_mode=ParseMode.HTML)
+            await processing_msg.edit_text(get_t(user.id, 'dl_failed'), parse_mode=ParseMode.HTML)
     else:
         # AI Chat Detected
         await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
@@ -207,22 +220,29 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data
     user_id = query.from_user.id
     
-    if data == "verify_sub":
-        try:
-            member = await context.bot.get_chat_member(MAIN_CHANNEL_ID, user_id)
-            if member.status in ['left', 'kicked']: await query.answer("❌ আপনি এখনো জয়েন করেননি!", show_alert=True)
-            else: await show_main_menu(query, context)
-        except:
-            await show_main_menu(query, context) 
-
-    elif data == "how_to":
-        txt = "💡 <b>কীভাবে ডাউনলোড করবেন?</b>\n\n১. TikTok, Facebook বা Instagram থেকে ভিডিওর <b>Copy Link</b> করুন।\n২. লিংকটি এখানে পেস্ট করে সেন্ড করুন।\n৩. কিছুক্ষণের মধ্যেই বট আপনাকে কোনো ওয়াটারমার্ক ছাড়াই মেইন ভিডিওটি দিয়ে দেবে! 🎉"
+    if data == "how_to":
+        txt = "💡 <b>How to Download?</b>\n\n1. Copy any video link from Facebook, TikTok, Instagram, or YouTube.\n2. Paste and send the link here.\n3. The bot will automatically download and send you the video without watermark! 🎉"
         await query.edit_message_text(txt, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="main_menu")]]), parse_mode=ParseMode.HTML)
 
     elif data == "my_id":
-        txt = f"👤 <b>আপনার প্রোফাইল:</b>\n\n📝 নাম: {query.from_user.first_name}\n🆔 ইউজার আইডি: <code>{user_id}</code>"
+        txt = f"👤 <b>Your Profile:</b>\n\n📝 Name: {query.from_user.first_name}\n🆔 User ID: <code>{user_id}</code>"
         await query.edit_message_text(txt, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="main_menu")]]), parse_mode=ParseMode.HTML)
         
+    elif data == "change_lang":
+        kb = [
+            [InlineKeyboardButton("🇧🇩 বাংলা", callback_data="lng_bn"), InlineKeyboardButton("🇬🇧 English", callback_data="lng_en")],
+            [InlineKeyboardButton("🔙 Back", callback_data="main_menu")]
+        ]
+        await query.edit_message_text("🌐 <b>Select your Language:</b>", reply_markup=InlineKeyboardMarkup(kb), parse_mode=ParseMode.HTML)
+
+    elif data.startswith("lng_"):
+        lang = data.split("_")[1]
+        with sqlite3.connect(DB_NAME) as conn: 
+            conn.execute("UPDATE bot_users SET lang = ? WHERE user_id = ?", (lang, user_id))
+            conn.commit()
+        await query.answer(get_t(user_id, 'lang_msg'), show_alert=True)
+        await show_main_menu(query, context)
+
     elif data == "main_menu":
         await show_main_menu(query, context)
 
@@ -252,7 +272,7 @@ async def show_admin_panel(update_or_message, context):
         dl = conn.execute("SELECT value FROM stats WHERE key = 'total_downloads'").fetchone()[0]
         ai = conn.execute("SELECT value FROM stats WHERE key = 'total_ai_chats'").fetchone()[0]
 
-    text = f"👑 <b>সুপার এডমিন ড্যাশবোর্ড</b>\n━━━━━━━━━━━━━━━━━━\n👥 মোট ইউজার: {usr}\n📥 মোট ডাউনলোড: {dl} টি\n🤖 মোট AI চ্যাট: {ai} বার\n━━━━━━━━━━━━━━━━━━\n👇 <i>অ্যাকশন বেছে নিন:</i>"
+    text = f"👑 <b>সুপার এডমিন ড্যাশবোর্ড</b>\n━━━━━━━━━━━━━━━━━━\n👥 মোট ইউজার: {usr} জন\n📥 মোট ডাউনলোড: {dl} টি\n🤖 মোট AI চ্যাট: {ai} বার\n━━━━━━━━━━━━━━━━━━\n👇 <i>অ্যাকশন বেছে নিন:</i>"
     kb = [
         [InlineKeyboardButton("📣 ইউজার ব্রডকাস্ট", callback_data="admin_bc")],
         [InlineKeyboardButton("❌ লগআউট", callback_data="admin_logout")]
@@ -261,7 +281,9 @@ async def show_admin_panel(update_or_message, context):
     else: await update_or_message.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode=ParseMode.HTML)
 
 def main():
+    # 🌐 সার্ভার ২৪ ঘণ্টা জাগিয়ে রাখার জন্য
     keep_alive()
+    
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     
     app.add_handler(CommandHandler("start", start_command))
@@ -269,7 +291,7 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT | filters.PHOTO | filters.VIDEO, handle_text))
     
-    print("🚀 All-in-One Viral Bot is running 24/7...")
+    print("🚀 Auto Downloader & AI Bot is running 24/7...")
     app.run_polling()
 
 if __name__ == '__main__':
