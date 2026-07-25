@@ -18,8 +18,8 @@ from telegram.ext import (
 from keep_alive import keep_alive
 
 # --- কনফিগারেশন ---
-BOT_TOKEN = "8690240616:AAFzk942XkVODDA9EYtY1eDaIrs5B9XjNX4"
-SUPPORT_CHANNEL_LINK = "https://t.me/+GOw-gR6YlixiOTE9"  # আপনার সাপোর্ট বা প্রমোশন চ্যানেলের লিংক
+BOT_TOKEN = "8978899309:AAGySai08hJM-SFfgZHA7ddkxFbOV_NDobw"
+SUPPORT_CHANNEL_LINK = "https://t.me/+HbL1VKdIbaQ5ZjI1"  # আপনার সাপোর্ট বা প্রমোশন চ্যানেলের লিংক
 
 ADMIN_USERNAME = "saddamadmin"
 ADMIN_PASSWORD = "saddamadmin1234"
