@@ -31,15 +31,15 @@ from keep_alive import keep_alive
 # CONFIGURATION
 # ============================================================
 
-BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "").strip()
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "").strip()
+BOT_TOKEN = os.getenv("8015240629:AAEquAIRwMTOD-U6lMF0ug7DtwyTwAW1c4Y", "").strip()
+ADMIN_USERNAME = os.getenv("saddampro", "").strip()
+ADMIN_PASSWORD = os.getenv("saddampro123", "").strip()
 
 # Example:
 # ADMIN_IDS=123456789,987654321
 ADMIN_IDS = {
     int(x.strip())
-    for x in os.getenv("ADMIN_IDS", "").split(",")
+    for x in os.getenv("6836865426", "").split(",")
     if x.strip().isdigit()
 }
 
