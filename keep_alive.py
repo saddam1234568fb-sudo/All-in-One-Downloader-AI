@@ -3,13 +3,18 @@ from threading import Thread
 
 app = Flask(__name__)
 
-@app.route('/')
+@app.route("/")
 def home():
     return "Bot is running 24/7!"
 
 def run():
-    app.run(host='0.0.0.0', port=8080)
+    app.run(
+        host="0.0.0.0",
+        port=8080,
+        debug=False,
+        use_reloader=False
+    )
 
 def keep_alive():
-    t = Thread(target=run)
-    t.start()
+    thread = Thread(target=run, daemon=True)
+    thread.start()
