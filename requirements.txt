@@ -1,4 +1,4 @@
-python-telegram-bot
-flask
+python-telegram-bot>=21.0
+flask>=3.0.0
 yt-dlp>=2024.03.10
-requests
+requests>=2.31.0
